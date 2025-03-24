@@ -2,13 +2,13 @@
 #include <PubSubClient.h>
 
 // Configurações da rede Wi-Fi
-const char* ssid = "INTELBRAS - JOAO";  
-const char* password = "jps510123";      
+const char* ssid = "seu_ssid";  
+const char* password = "sua_senha";      
 
 // Configurações do Broker MQTT
 const char* mqtt_server = "broker.hivemq.com"; 
 const int mqtt_port = 1883;                    
-const char* mqtt_topic = "kutski/esp32/led"; 
+const char* mqtt_topic = "seu_usuario/esp32/led"; 
 
 WiFiClient espClient;
 PubSubClient client(espClient);
