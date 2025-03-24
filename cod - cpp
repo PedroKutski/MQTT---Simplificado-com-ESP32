@@ -1,0 +1,82 @@
+#include <WiFi.h>
+#include <PubSubClient.h>
+
+// Configurações da rede Wi-Fi
+const char* ssid = "INTELBRAS - JOAO";  
+const char* password = "jps510123";      
+
+// Configurações do Broker MQTT
+const char* mqtt_server = "broker.hivemq.com"; 
+const int mqtt_port = 1883;                    
+const char* mqtt_topic = "kutski/esp32/led"; 
+
+WiFiClient espClient;
+PubSubClient client(espClient);
+
+// Pino do LED
+const int ledPin = 2;
+
+void setup() {
+  pinMode(ledPin, OUTPUT);
+  Serial.begin(115200);
+  setupWiFi();
+  
+  client.setServer(mqtt_server, mqtt_port);
+  client.setCallback(callback); 
+}
+
+void loop() {
+  if (!client.connected()) {
+    reconnect();
+  }
+  client.loop();
+  delay(10);  // Pequeno atraso para estabilidade
+}
+
+void setupWiFi() {
+  Serial.println("Conectando ao Wi-Fi...");
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("\nConectado ao Wi-Fi!");
+  Serial.print("IP: ");
+  Serial.println(WiFi.localIP());
+}
+
+void reconnect() {
+  while (!client.connected()) {
+    Serial.print("Tentando conectar ao Broker MQTT...");
+    
+    // Usa um nome de cliente baseado no chip ID para evitar conflitos
+    String clientId = "ESP32Client-" + String(ESP.getEfuseMac(), HEX);
+
+    if (client.connect(clientId.c_str())) {
+      Serial.println("Conectado ao Broker!");
+      client.subscribe(mqtt_topic);
+    } else {
+      Serial.print("Falha (Código: ");
+      Serial.print(client.state());
+      Serial.println("). Tentando novamente em 5s...");
+      delay(5000);
+    }
+  }
+}
+
+void callback(char* topic, byte* payload, unsigned int length) {
+  String message = "";
+  for (int i = 0; i < length; i++) {
+    message += (char)payload[i];
+  }
+  
+  message.trim();  // Remove espaços extras
+  
+  Serial.println("Mensagem recebida: " + message);
+
+  if (message.equalsIgnoreCase("ON")) {
+    digitalWrite(ledPin, HIGH);
+  } else if (message.equalsIgnoreCase("OFF")) {
+    digitalWrite(ledPin, LOW);
+  }
+}
